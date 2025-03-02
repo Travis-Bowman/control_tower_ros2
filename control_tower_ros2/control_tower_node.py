@@ -3,14 +3,20 @@ from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int32
+from control_tower_ros2.ackermann_mode import ackermann_drive
+from control_tower_ros2.differential_mode_mode import differential_drive
+from control_tower_ros2.directional_mode_mode import directional_drive
         
 class control_tower_node(Node):
     def __init__(self):
         super().__init__('control_tower_node')
+
         # Create a publisher for the Twist message on the 'cmd_vel' topic.
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 1)
+
         # Publisher for the switch states using an array of integers
         self.switch_publisher_ = self.create_publisher(Int32MultiArray, 'switch_states', 1)
+
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
@@ -37,7 +43,7 @@ class control_tower_node(Node):
         self.sub_ch7 = self.create_subscription(Int32,'ch7', self.callback_7, 1)
         self.sub_ch8 = self.create_subscription(Int32,'ch8', self.callback_8, 1)
 
-    def map_rc(self, value, dead_zone= 10, out_min=-10.0, out_max=10.0):
+    def map_rc(self, value, out_min=-10.0, out_max=10.0):
         return (round((value - 1000) * (out_max - out_min) / 1000 + out_min, 1))
 
     def map_sw(self, value):
@@ -62,6 +68,18 @@ class control_tower_node(Node):
     def update_callback(self):
         # Map the IBUS data to a Twist message.
         twist_msg = Twist()
+
+        if self.sw_c == 0:
+            pass
+
+        elif self.sw_c == 1:
+            pass
+
+        elif self.sw_c == 2:
+            pass
+
+
+"""     
         twist_msg.linear.x = self.map_rc(self.ly)
         twist_msg.angular.z = self.map_rc(self.lx,-3.14,3.14)
         #twist_msg.linear.y = self.angular_y
@@ -80,7 +98,7 @@ class control_tower_node(Node):
             self.map_sw(self.sw_d)
         ]
         self.switch_publisher_.publish(sw_msg)
-        self.get_logger().info(f"Published Switch States: {sw_msg.data}")
+        self.get_logger().info(f"Published Switch States: {sw_msg.data}") """
 
 def main(args=None):
     rclpy.init(args=args)
