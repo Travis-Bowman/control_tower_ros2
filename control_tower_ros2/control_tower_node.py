@@ -74,7 +74,7 @@ class control_tower_node(Node):
 
         # Publish the Twist message
         self.publisher_.publish(twist_msg)
-        self.get_logger().info(f"Published Twist: linear.x={twist_msg.linear.x}, angular.z={twist_msg.angular.z}")
+        # self.get_logger().info(f"Published Twist: linear.x={twist_msg.linear.x}, angular.z={twist_msg.angular.z}")
 
         #Publish the Switch state
         sw_msg = Int32MultiArray()
