@@ -5,14 +5,16 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Int32
 import numpy as np
 from control_tower_ros2.double_ackermann import DoubleAckermannSteering as da
-        
+
+
 class control_tower_node(Node):
     def __init__(self):
         super().__init__('control_tower_node')
         # Create a publisher for the Twist message on the 'cmd_vel' topic.
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 1)
         # Publisher for the switch states using an array of integers
-        self.switch_publisher_ = self.create_publisher(Int32MultiArray, 'switch_states', 1)
+        self.switch_publisher_ = self.create_publisher(
+            Int32MultiArray, 'switch_states', 1)
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
@@ -24,32 +26,29 @@ class control_tower_node(Node):
 
         # Switch
         self.sw_a = 0
-        self.sw_b = 0 #broken
+        self.sw_b = 0  # broken
         self.sw_c = 0
         self.sw_d = 0
 
         # Create subscriptions
-        self.sub_ch1 = self.create_subscription(Int32,'ch1', self.callback_1, 1)
-        self.sub_ch2 = self.create_subscription(Int32,'ch2', self.callback_2, 1)
-        self.sub_ch3 = self.create_subscription(Int32,'ch3', self.callback_3, 1)
-        self.sub_ch4 = self.create_subscription(Int32,'ch4', self.callback_4, 1)
+        self.sub_ch1 = self.create_subscription(
+            Int32, 'ch1', self.callback_1, 1)
+        self.sub_ch2 = self.create_subscription(
+            Int32, 'ch2', self.callback_2, 1)
+        self.sub_ch3 = self.create_subscription(
+            Int32, 'ch3', self.callback_3, 1)
+        self.sub_ch4 = self.create_subscription(
+            Int32, 'ch4', self.callback_4, 1)
 
-        self.sub_ch5 = self.create_subscription(Int32,'ch5', self.callback_5, 1)
-        self.sub_ch6 = self.create_subscription(Int32,'ch6', self.callback_6, 1)
-        self.sub_ch7 = self.create_subscription(Int32,'ch7', self.callback_7, 1)
-        self.sub_ch8 = self.create_subscription(Int32,'ch8', self.callback_8, 1)
+        self.sub_ch5 = self.create_subscription(
+            Int32, 'ch5', self.callback_5, 1)
+        self.sub_ch6 = self.create_subscription(
+            Int32, 'ch6', self.callback_6, 1)
+        self.sub_ch7 = self.create_subscription(
+            Int32, 'ch7', self.callback_7, 1)
+        self.sub_ch8 = self.create_subscription(
+            Int32, 'ch8', self.callback_8, 1)
 
-    # def map_rc(self, value, dead_zone= 10, out_min=-10.0, out_max=10.0):
-    #     return (round((value - 1000) * (out_max - out_min) / 1000 + out_min, 1))
-
-    def map_sw(self, value):
-        if value == 1000:
-            return 0
-        elif value == 1500:
-            return 1
-        else:
-            return 2
-    
     # Define separate callback functions for each channel
     def callback_1(self, msg): self.rx = msg.data
     def callback_2(self, msg): self.ly = msg.data
@@ -60,24 +59,62 @@ class control_tower_node(Node):
     def callback_6(self, msg): self.sw_b = msg.data
     def callback_7(self, msg): self.sw_c = msg.data
     def callback_8(self, msg): self.sw_d = msg.data
- 
+
+    def map_sw(self, value):
+        if value == 1000:
+            return 0
+        elif value == 1500:
+            return 1
+        else:
+            return 2
+
     def update_callback(self):
 
-        # interpolation input/output ranges for twist value mapping
-        input_range = np.array([1000, 1450, 1550, 2000])
-        linear_output_range = np.array([-10, 0, 0, 10])
-        angular_output_range = np.array([-3.14, 0, 0, 3.14])
+        # 0: double Ackermann, 1: Fixed Heading, 2: edu-bot test mode
+        self.drive_mode = self.sw_c
 
-        # Map the IBUS data to a Twist message.
-        twist_msg = Twist()
-        twist_msg.linear.x = np.interp(self.ly, input_range, linear_output_range)
-        twist_msg.angular.z = np.interp(self.lx, input_range, angular_output_range)
+        if self.drive_mode == 0:
+            # Double Ackermann
+            # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
+            vehicle = da(self.lx, self.ly, l=2.5, w=1.5, max_speed=2.0)
 
-        # Publish the Twist message
-        self.publisher_.publish(twist_msg)
-        # self.get_logger().info(f"Published Twist: linear.x={twist_msg.linear.x}, angular.z={twist_msg.angular.z}")
+            # TODO: Publish wheel angles/velocities from vehicle object
+            # vehicle.theta_f_left
+            # vehicle.theta_f_right
+            # vehicle.theta_r_left
+            # vehicle.theta_r_right
+            # vehicle.v_f_left
+            # vehicle.v_f_right
+            # vehicle.v_r_left
+            # vehicle.v_f_left
 
-        #Publish the Switch state
+            # Debugging
+            # self.get_logger().info(f"Published Wheel Angles: {vehicle.theta_f_left}, {vehicle.theta_f_right}, {vehicle.theta_r_left}, {vehicle.theta_r_right}")
+            # self.get_logger().info(f"Published Wheel Velocities: {vehicle.v_f_left}, {vehicle.v_f_right}, {vehicle.v_r_left}, {vehicle.v_f_left}")
+
+        elif self.drive_mode == 1:
+            # Fixed Heading
+            pass
+        elif self.drive_mode == 2:
+            # edu-bot test mode
+            input_range = np.array([1000, 1450, 1550, 2000])
+            linear_output_range = np.array([-10, 0, 0, 10])
+            angular_output_range = np.array([-3.14, 0, 0, 3.14])
+
+            # Map the IBUS data to a Twist message.
+            twist_msg = Twist()
+            twist_msg.linear.x = np.interp(
+                self.ly, input_range, linear_output_range)
+            twist_msg.angular.z = np.interp(
+                self.lx, input_range, angular_output_range)
+
+            # Publish the Twist message
+            self.publisher_.publish(twist_msg)
+
+            # Debuging
+            # self.get_logger().info(f"Published Twist: {twist_msg}")
+
+        # Publish the Switch state
         sw_msg = Int32MultiArray()
         sw_msg.data = [
             self.map_sw(self.sw_a),
@@ -86,7 +123,9 @@ class control_tower_node(Node):
             self.map_sw(self.sw_d)
         ]
         self.switch_publisher_.publish(sw_msg)
-        self.get_logger().info(f"Published Switch States: {sw_msg.data}")
+        # Debugging
+        # self.get_logger().info(f"Published Switch States: {sw_msg.data}")
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -98,6 +137,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
