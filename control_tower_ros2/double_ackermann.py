@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 class DoubleAckermannSteering:
 
-    def __init__(self, lx, ly, l=2.5, w=1.5, max_speed=2.0):
+    def __init__(self, lx, ly, l=0.711, w=0.558, max_speed=2.0):
         """
         Key Variable Units:
 
