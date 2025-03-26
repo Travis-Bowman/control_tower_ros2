@@ -76,7 +76,7 @@ class control_tower_node(Node):
         if self.drive_mode == 0:
             # Double Ackermann
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
-            vehicle = da(self.lx, self.ly, l=2.5, w=1.5, max_speed=2.0)
+            vehicle = da(self.lx, self.ly)
 
             # TODO: Publish wheel angles/velocities from vehicle object
             # vehicle.theta_f_left
@@ -86,11 +86,11 @@ class control_tower_node(Node):
             # vehicle.v_f_left
             # vehicle.v_f_right
             # vehicle.v_r_left
-            # vehicle.v_f_left
+            # vehicle.v_r_right
 
             # Debugging
             # self.get_logger().info(f"Published Wheel Angles: {vehicle.theta_f_left}, {vehicle.theta_f_right}, {vehicle.theta_r_left}, {vehicle.theta_r_right}")
-            # self.get_logger().info(f"Published Wheel Velocities: {vehicle.v_f_left}, {vehicle.v_f_right}, {vehicle.v_r_left}, {vehicle.v_f_left}")
+            # self.get_logger().info(f"Published Wheel Velocities: {vehicle.v_f_left}, {vehicle.v_f_right}, {vehicle.v_r_left}, {vehicle.v_r_right}")
 
         elif self.drive_mode == 1:
             # Fixed Heading
