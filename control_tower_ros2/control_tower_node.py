@@ -6,8 +6,16 @@ from std_msgs.msg import Int32
 import numpy as np
 from control_tower_ros2.double_ackermann import DoubleAckermannSteering as da
 
+from paho.mqtt import client as MQTT
+
 
 class control_tower_node(Node):
+    
+    mqtt_host = "192.168.0.3"
+    mqtt_port = 1883
+    mqtt_name = "controlTower"
+    mqtt_client : MQTT.Client
+    
     def __init__(self):
         super().__init__('control_tower_node')
         # Create a publisher for the Twist message on the 'cmd_vel' topic.
@@ -48,6 +56,11 @@ class control_tower_node(Node):
             Int32, 'ch7', self.callback_7, 1)
         self.sub_ch8 = self.create_subscription(
             Int32, 'ch8', self.callback_8, 1)
+        
+        # set up MQTT client
+        self.mqtt_client = MQTT.Client(client_id=self.mqtt_name)
+        self.mqtt_client.connect(self.mqtt_host, self.mqtt_port)
+        self.mqtt_client.loop_start()
 
     # Define separate callback functions for each channel
     def callback_1(self, msg): self.rx = msg.data
@@ -77,7 +90,7 @@ class control_tower_node(Node):
             # Double Ackermann
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
             vehicle = da(self.lx, self.ly)
-
+            self.publish_wheels(vehicle)
             # TODO: Publish wheel angles/velocities from vehicle object
             # vehicle.theta_f_left
             # vehicle.theta_f_right
@@ -125,6 +138,19 @@ class control_tower_node(Node):
         self.switch_publisher_.publish(sw_msg)
         # Debugging
         # self.get_logger().info(f"Published Switch States: {sw_msg.data}")
+        
+    def publish_wheels(self, vehicle : da):
+        self.mqtt_client.publish("/frontleft/power", vehicle.v_f_left)
+        self.mqtt_client.publish("/frontleft/steer", vehicle.theta_f_left)
+        
+        self.mqtt_client.publish("/frontright/power", vehicle.v_f_right)
+        self.mqtt_client.publish("/frontright/steer", vehicle.theta_f_right)
+        
+        self.mqtt_client.publish("/backleft/power", vehicle.v_r_left)
+        self.mqtt_client.publish("/backleft/steer", vehicle.theta_r_left)
+        
+        self.mqtt_client.publish("/backright/power", vehicle.v_r_right)
+        self.mqtt_client.publish("/backright/steer", vehicle.theta_r_right)
 
 
 def main(args=None):
