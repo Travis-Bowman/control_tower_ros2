@@ -16,20 +16,20 @@ def generate_launch_description():
             name='control_tower_node',
         )
     
-    ibus_node = Node(
-            package='ibus_reader',
-            executable='ibus_reader',
-            namespace="/",
-            name='ibus_reader',
-            parameters=[
-                {'ibus_channel': LaunchConfiguration("ibus_channel")}
-            ]
-        )
+    # ibus_node = Node(
+    #         package='ibus_reader',
+    #         executable='ibus_reader',
+    #         namespace="/",
+    #         name='ibus_reader',
+    #         parameters=[
+    #             {'ibus_channel': LaunchConfiguration("ibus_channel")}
+    #         ]
+    #     )
     
     
     
     return LaunchDescription([
         ibus_channel_arg,
         control_tower_node,
-        ibus_node,
+        # ibus_node,
     ])

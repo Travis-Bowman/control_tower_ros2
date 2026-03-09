@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray
@@ -5,6 +6,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Int32
 import numpy as np
 from control_tower_ros2.double_ackermann import DoubleAckermannSteering as da
+from control_tower_ros2.msg import WheelCommands
 
 class control_tower_node(Node):
     
@@ -16,6 +18,7 @@ class control_tower_node(Node):
         # Publisher for the switch states using an array of integers
         self.switch_publisher_ = self.create_publisher(
             Int32MultiArray, 'switch_states', 1)
+        self.wheel_pub = self.create_publisher(WheelCommands, 'wheel_commands', 10)
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
@@ -27,7 +30,7 @@ class control_tower_node(Node):
 
         # Switch
         self.sw_a = 0
-        self.sw_b = 0  # broken
+        self.sw_b = 0 
         self.sw_c = 0
         self.sw_d = 0
 
@@ -71,23 +74,27 @@ class control_tower_node(Node):
 
     def update_callback(self):
 
-        # 0: double Ackermann, 1: Fixed Heading, 2: edu-bot test mode
-        self.drive_mode = self.sw_c
-
+        # 0: double Ackermann, 1: Fixed Heading
+        self.drive_mode = self.map_sw(self.sw_c)
+        
         if self.drive_mode == 0:
+            self.get_logger().info("Double Ackerman", throttle_duration=50.0)
             # Double Ackermann
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
             vehicle = da(self.lx, self.ly)
             self.publish_wheels(vehicle)
-            # TODO: Publish wheel angles/velocities from vehicle object
-            # vehicle.theta_f_left
-            # vehicle.theta_f_right
-            # vehicle.theta_r_left
-            # vehicle.theta_r_right
-            # vehicle.v_f_left
-            # vehicle.v_f_right
-            # vehicle.v_r_left
-            # vehicle.v_r_right
+            
+            vehicle.theta_f_left
+            vehicle.theta_f_right
+            vehicle.theta_r_left
+            
+            vehicle.theta_r_right
+            self.publish_wheels(vehicle)
+            
+            vehicle.v_f_left
+            vehicle.v_f_right
+            vehicle.v_r_left
+            vehicle.v_r_right
 
             # Debugging
             # self.get_logger().info(f"Published Wheel Angles: {vehicle.theta_f_left}, {vehicle.theta_f_right}, {vehicle.theta_r_left}, {vehicle.theta_r_right}")
@@ -96,21 +103,21 @@ class control_tower_node(Node):
         elif self.drive_mode == 1:
             # Fixed Heading
             pass
-        elif self.drive_mode == 2:
-            # edu-bot test mode
-            input_range = np.array([1000, 1450, 1550, 2000])
-            linear_output_range = np.array([-10, 0, 0, 10])
-            angular_output_range = np.array([-3.14, 0, 0, 3.14])
+        # elif self.drive_mode == 2:
+        #     # edu-bot test mode
+        #     input_range = np.array([1000, 1450, 1550, 2000])
+        #     linear_output_range = np.array([-10, 0, 0, 10])
+        #     angular_output_range = np.array([-3.14, 0, 0, 3.14])
 
-            # Map the IBUS data to a Twist message.
-            twist_msg = Twist()
-            twist_msg.linear.x = np.interp(
-                self.ly, input_range, linear_output_range)
-            twist_msg.angular.z = np.interp(
-                self.lx, input_range, angular_output_range)
+        #     # Map the IBUS data to a Twist message.
+        #     twist_msg = Twist()
+        #     twist_msg.linear.x = np.interp(
+        #         self.ly, input_range, linear_output_range)
+        #     twist_msg.angular.z = np.interp(
+        #         self.lx, input_range, angular_output_range)
 
-            # Publish the Twist message
-            self.publisher_.publish(twist_msg)
+        #     # Publish the Twist message
+        #     self.publisher_.publish(twist_msg)
 
             # Debuging
             # self.get_logger().info(f"Published Twist: {twist_msg}")
@@ -127,18 +134,23 @@ class control_tower_node(Node):
         # Debugging
         # self.get_logger().info(f"Published Switch States: {sw_msg.data}")
         
-    def publish_wheels(self, vehicle : da):
-        self.mqtt_client.publish("/frontleft/power", vehicle.v_f_left)
-        self.mqtt_client.publish("/frontleft/steer", vehicle.theta_f_left)
-        
-        self.mqtt_client.publish("/frontright/power", vehicle.v_f_right)
-        self.mqtt_client.publish("/frontright/steer", vehicle.theta_f_right)
-        
-        self.mqtt_client.publish("/backleft/power", vehicle.v_r_left)
-        self.mqtt_client.publish("/backleft/steer", vehicle.theta_r_left)
-        
-        self.mqtt_client.publish("/backright/power", vehicle.v_r_right)
-        self.mqtt_client.publish("/backright/steer", vehicle.theta_r_right)
+    def publish_wheels(self, vehicle):
+
+        msg = WheelCommands()
+
+        msg.front_left_speed = float(vehicle.v_f_left)
+        msg.front_left_steer = float(vehicle.theta_f_left)
+
+        msg.front_right_speed = float(vehicle.v_f_right)
+        msg.front_right_steer = float(vehicle.theta_f_right)
+
+        msg.rear_left_speed = float(vehicle.v_r_left)
+        msg.rear_left_steer = float(vehicle.theta_r_left)
+
+        msg.rear_right_speed = float(vehicle.v_r_right)
+        msg.rear_right_steer = float(vehicle.theta_r_right)
+
+        self.wheel_pub.publish(msg)
 
 
 def main(args=None):
@@ -151,7 +163,6 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

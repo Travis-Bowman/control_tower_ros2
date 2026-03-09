@@ -1,0 +1,11 @@
+float32 front_left_speed
+float32 front_left_steer
+
+float32 front_right_speed
+float32 front_right_steer
+
+float32 rear_left_speed
+float32 rear_left_steer
+
+float32 rear_right_speed
+float32 rear_right_steer

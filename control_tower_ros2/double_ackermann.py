@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 class DoubleAckermannSteering:
@@ -112,88 +112,88 @@ class DoubleAckermannSteering:
         print(
             f"Rear left Wheel Angle: {self.theta_r_left:.2f}° | Velocity: {self.v_r_left:.2f} m/s")
 
-    def visualize(self):
-        """Visualizes the vehicle aligned along the Y-axis with steering angles in radians (displayed in degrees)."""
+    # def visualize(self):
+    #     """Visualizes the vehicle aligned along the Y-axis with steering angles in radians (displayed in degrees)."""
 
-        # Define the vehicle body (facing +Y)
-        vehicle_y = [-self.l / 2, self.l / 2,
-                     self.l / 2, -self.l / 2, -self.l / 2]
-        vehicle_x = [-self.w / 2, -self.w / 2,
-                     self.w / 2, self.w / 2, -self.w / 2]
+    #     # Define the vehicle body (facing +Y)
+    #     vehicle_y = [-self.l / 2, self.l / 2,
+    #                  self.l / 2, -self.l / 2, -self.l / 2]
+    #     vehicle_x = [-self.w / 2, -self.w / 2,
+    #                  self.w / 2, self.w / 2, -self.w / 2]
 
-        # Define wheel positions [X, Y] in top-down view
-        wheel_positions = np.array([
-            [self.w / 2,  self.l / 2],   # Front Left
-            [-self.w / 2,  self.l / 2],   # Front Right
-            [self.w / 2, -self.l / 2],   # Rear Left
-            [-self.w / 2, -self.l / 2],   # Rear Right
-        ])
+    #     # Define wheel positions [X, Y] in top-down view
+    #     wheel_positions = np.array([
+    #         [self.w / 2,  self.l / 2],   # Front Left
+    #         [-self.w / 2,  self.l / 2],   # Front Right
+    #         [self.w / 2, -self.l / 2],   # Rear Left
+    #         [-self.w / 2, -self.l / 2],   # Rear Right
+    #     ])
 
-        # Convert wheel angles to radians (already in radians)
-        angles_rad = [
-            self.theta_f_right, self.theta_f_left,
-            self.theta_r_right, self.theta_r_left
-        ]
+    #     # Convert wheel angles to radians (already in radians)
+    #     angles_rad = [
+    #         self.theta_f_right, self.theta_f_left,
+    #         self.theta_r_right, self.theta_r_left
+    #     ]
 
-        # Compute direction vectors (X, Y) from angles
-        wheel_vectors = np.array([
-            [np.sin(ang), np.cos(ang)] for ang in angles_rad
-        ])
+    #     # Compute direction vectors (X, Y) from angles
+    #     wheel_vectors = np.array([
+    #         [np.sin(ang), np.cos(ang)] for ang in angles_rad
+    #     ])
 
-        # Scale by velocity
-        velocities = [
-            self.v_f_right, self.v_f_left,
-            self.v_r_right, self.v_r_left
-        ]
+    #     # Scale by velocity
+    #     velocities = [
+    #         self.v_f_right, self.v_f_left,
+    #         self.v_r_right, self.v_r_left
+    #     ]
 
-        wheel_vectors *= np.array(velocities)[:, None]
+    #     wheel_vectors *= np.array(velocities)[:, None]
 
-        # Normalize for plotting
-        max_v = max(abs(v) for v in velocities)
-        if max_v > 0:
-            wheel_vectors /= max_v  # normalize to length 1
-        arrow_scale = 0.5
-        wheel_vectors *= arrow_scale
+    #     # Normalize for plotting
+    #     max_v = max(abs(v) for v in velocities)
+    #     if max_v > 0:
+    #         wheel_vectors /= max_v  # normalize to length 1
+    #     arrow_scale = 0.5
+    #     wheel_vectors *= arrow_scale
 
-        # Start plot
-        plt.figure(figsize=(6, 8))
-        plt.plot(vehicle_x, vehicle_y, 'k', linewidth=2, label="School Bus")
+    #     # Start plot
+    #     plt.figure(figsize=(6, 8))
+    #     plt.plot(vehicle_x, vehicle_y, 'k', linewidth=2, label="School Bus")
 
-        # Draw axles
-        plt.plot([-self.w / 2, self.w / 2],
-                 [self.l / 2,  self.l / 2], 'b', linewidth=1)
-        plt.plot([-self.w / 2, self.w / 2],
-                 [-self.l / 2, -self.l / 2], 'b', linewidth=1)
+    #     # Draw axles
+    #     plt.plot([-self.w / 2, self.w / 2],
+    #              [self.l / 2,  self.l / 2], 'b', linewidth=1)
+    #     plt.plot([-self.w / 2, self.w / 2],
+    #              [-self.l / 2, -self.l / 2], 'b', linewidth=1)
 
-        # Draw wheel vectors
-        plt.quiver(
-            wheel_positions[:, 0], wheel_positions[:, 1],
-            wheel_vectors[:, 0], wheel_vectors[:, 1],
-            color='r', angles='xy', scale_units='xy', scale=1, width=0.01
-        )
+    #     # Draw wheel vectors
+    #     plt.quiver(
+    #         wheel_positions[:, 0], wheel_positions[:, 1],
+    #         wheel_vectors[:, 0], wheel_vectors[:, 1],
+    #         color='r', angles='xy', scale_units='xy', scale=1, width=0.01
+    #     )
 
-        # Mark wheel positions
-        plt.scatter(wheel_positions[:, 0],
-                    wheel_positions[:, 1], color='k', zorder=3)
+    #     # Mark wheel positions
+    #     plt.scatter(wheel_positions[:, 0],
+    #                 wheel_positions[:, 1], color='k', zorder=3)
 
-        # Annotate angles (in degrees for readability)
-        plt.text(self.w / 2 + 0.2,  self.l / 2,
-                 f"{np.degrees(self.theta_f_right):.1f}°", color='r', fontsize=12)
-        plt.text(-self.w / 2 - 0.8,  self.l / 2,
-                 f"{np.degrees(self.theta_f_left):.1f}°", color='r', fontsize=12)
-        plt.text(self.w / 2 + 0.2, -self.l / 2,
-                 f"{np.degrees(self.theta_r_right):.1f}°", color='r', fontsize=12)
-        plt.text(-self.w / 2 - 0.8, -self.l / 2,
-                 f"{np.degrees(self.theta_r_left):.1f}°", color='r', fontsize=12)
+    #     # Annotate angles (in degrees for readability)
+    #     plt.text(self.w / 2 + 0.2,  self.l / 2,
+    #              f"{np.degrees(self.theta_f_right):.1f}°", color='r', fontsize=12)
+    #     plt.text(-self.w / 2 - 0.8,  self.l / 2,
+    #              f"{np.degrees(self.theta_f_left):.1f}°", color='r', fontsize=12)
+    #     plt.text(self.w / 2 + 0.2, -self.l / 2,
+    #              f"{np.degrees(self.theta_r_right):.1f}°", color='r', fontsize=12)
+    #     plt.text(-self.w / 2 - 0.8, -self.l / 2,
+    #              f"{np.degrees(self.theta_r_left):.1f}°", color='r', fontsize=12)
 
-        # Labels and plot settings
-        plt.xlabel("X Position (m)")
-        plt.ylabel("Y Position (m)")
-        plt.title("Double Ackermann Steering Visualization (Facing Y+)")
-        plt.axis("equal")
-        plt.grid(True)
-        plt.legend()
-        plt.show()
+    #     # Labels and plot settings
+    #     plt.xlabel("X Position (m)")
+    #     plt.ylabel("Y Position (m)")
+    #     plt.title("Double Ackermann Steering Visualization (Facing Y+)")
+    #     plt.axis("equal")
+    #     plt.grid(True)
+    #     plt.legend()
+    #     plt.show()
 
 
 # Example Usage
