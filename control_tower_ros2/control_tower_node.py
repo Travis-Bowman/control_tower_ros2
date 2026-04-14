@@ -5,8 +5,8 @@ from std_msgs.msg import Int32MultiArray
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int32
 import numpy as np
-from control_tower_ros2.double_ackermann import DoubleAckermannSteering as da
-from control_tower_ros2.msg import WheelCommands
+from control_tower_ros2.differentail_drive import DifferentialDrive as diff_drive
+from control_tower_ros2.msg import DiffWheelCommands
 
 class control_tower_node(Node):
     
@@ -18,7 +18,7 @@ class control_tower_node(Node):
         # Publisher for the switch states using an array of integers
         self.switch_publisher_ = self.create_publisher(
             Int32MultiArray, 'switch_states', 1)
-        self.wheel_pub = self.create_publisher(WheelCommands, 'wheel_commands', 10)
+        self.wheel_pub = self.create_publisher(DiffWheelCommands, 'wheel_commands', 10)
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
@@ -74,32 +74,17 @@ class control_tower_node(Node):
 
     def update_callback(self):
 
-        # 0: double Ackermann, 1: Fixed Heading
+        # 0: Differentail Drive, 1: Fixed Heading
         self.drive_mode = self.map_sw(self.sw_c)
         #print(self.drive_mode)
         
         if self.drive_mode == 0:
-            self.get_logger().info("Double Ackerman")
-            # Double Ackermann
+            self.get_logger().info("Differentail Drive")
+            # Differentail Drive
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
-            vehicle = da(self.lx, self.ly)
+            vehicle = diff_drive(self.lx, self.ly)
+            
             self.publish_wheels(vehicle)
-            
-            vehicle.theta_f_left
-            vehicle.theta_f_right
-            vehicle.theta_r_left
-            
-            vehicle.theta_r_right
-            self.publish_wheels(vehicle)
-            
-            vehicle.v_f_left
-            vehicle.v_f_right
-            vehicle.v_r_left
-            vehicle.v_r_right
-
-            # Debugging
-            # self.get_logger().info(f"Published Wheel Angles: {vehicle.theta_f_left}, {vehicle.theta_f_right}, {vehicle.theta_r_left}, {vehicle.theta_r_right}")
-            # self.get_logger().info(f"Published Wheel Velocities: {vehicle.v_f_left}, {vehicle.v_f_right}, {vehicle.v_r_left}, {vehicle.v_r_right}")
 
         elif self.drive_mode == 1:
             # Fixed Heading
@@ -137,19 +122,10 @@ class control_tower_node(Node):
         
     def publish_wheels(self, vehicle):
 
-        msg = WheelCommands()
+        msg = DiffWheelCommands()
 
-        msg.front_left_speed = float(vehicle.v_f_left)
-        msg.front_left_steer = float(vehicle.theta_f_left)
-
-        msg.front_right_speed = float(vehicle.v_f_right)
-        msg.front_right_steer = float(vehicle.theta_f_right)
-
-        msg.rear_left_speed = float(vehicle.v_r_left)
-        msg.rear_left_steer = float(vehicle.theta_r_left)
-
-        msg.rear_right_speed = float(vehicle.v_r_right)
-        msg.rear_right_steer = float(vehicle.theta_r_right)
+        msg.l_wheel_vel = float(vehicle.v_left)
+        msg.r_wheel_vel = float(vehicle.r_left)
 
         self.wheel_pub.publish(msg)
 
