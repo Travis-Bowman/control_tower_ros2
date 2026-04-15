@@ -76,9 +76,10 @@ class control_tower_node(Node):
 
         # 0: double Ackermann, 1: Fixed Heading
         self.drive_mode = self.map_sw(self.sw_c)
+        #print(self.drive_mode)
         
         if self.drive_mode == 0:
-            self.get_logger().info("Double Ackerman", throttle_duration=50.0)
+            self.get_logger().info("Double Ackerman")
             # Double Ackermann
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
             vehicle = da(self.lx, self.ly)
