@@ -125,7 +125,7 @@ class control_tower_node(Node):
         msg = DiffWheelCommands()
 
         msg.l_wheel_vel = float(vehicle.v_left)
-        msg.r_wheel_vel = float(vehicle.r_left)
+        msg.r_wheel_vel = float(vehicle.v_right)
 
         self.wheel_pub.publish(msg)
 
