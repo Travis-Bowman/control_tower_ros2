@@ -13,8 +13,10 @@ class control_tower_node(Node):
 
     def __init__(self):
         super().__init__('control_tower_node')
-        # Create a publisher for the Twist message on the 'cmd_vel' topic.
-        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 1)
+        self.publisher_ = self.create_publisher(Twist, 'rc_cmd_vel', 1)
+
+        self.auto_cmd_vel = Twist()
+        self.create_subscription(Twist, 'cmd_vel', self._auto_cmd_vel_cb, 1)
         # Publisher for the switch states using an array of integers
         self.switch_publisher_ = self.create_publisher(
             Int32MultiArray, 'switch_states', 1)
@@ -62,6 +64,8 @@ class control_tower_node(Node):
     def callback_3(self, msg): self.ly = msg.data
     def callback_4(self, msg): self.lx = msg.data
 
+    def _auto_cmd_vel_cb(self, msg): self.auto_cmd_vel = msg
+
     def callback_5(self, msg): self.sw_a = msg.data
     def callback_6(self, msg): self.sw_b = msg.data
     def callback_7(self, msg): self.sw_c = msg.data
@@ -95,26 +99,7 @@ class control_tower_node(Node):
             self.publish_wheels(vehicle)
 
         elif self.drive_mode == 1:
-            # Fixed Heading
-            pass
-        # elif self.drive_mode == 2:
-        #     # edu-bot test mode
-        #     input_range = np.array([1000, 1450, 1550, 2000])
-        #     linear_output_range = np.array([-10, 0, 0, 10])
-        #     angular_output_range = np.array([-3.14, 0, 0, 3.14])
-
-        #     # Map the IBUS data to a Twist message.
-        #     twist_msg = Twist()
-        #     twist_msg.linear.x = np.interp(
-        #         self.ly, input_range, linear_output_range)
-        #     twist_msg.angular.z = np.interp(
-        #         self.lx, input_range, angular_output_range)
-
-        #     # Publish the Twist message
-        #     self.publisher_.publish(twist_msg)
-
-            # Debuging
-            # self.get_logger().info(f"Published Twist: {twist_msg}")
+            self.publish_wheels_from_twist(self.auto_cmd_vel)
 
         # Publish the Switch state
         sw_msg = Int32MultiArray()
@@ -125,17 +110,37 @@ class control_tower_node(Node):
             self.map_sw(self.sw_d)
         ]
         self.switch_publisher_.publish(sw_msg)
-        # Debugging
-        # self.get_logger().info(f"Published Switch States: {sw_msg.data}")
         
     def publish_wheels(self, vehicle):
 
         msg = DiffWheelCommands()
         msg.v_left = float(vehicle.rad_s_left)
         msg.v_right = float(vehicle.rad_s_right)
-        #self.get_logger().info(f"Left wheel vel: {msg.v_left} Right Wheel vel {msg.v_right}")
+        
         self.wheel_pub.publish(msg)
     
+    def publish_wheels_from_twist(self, twist):
+        track_width = 0.5  # meters, distance between left and right wheels
+        v     = twist.linear.x
+        omega = twist.angular.z
+        v_left  = v - omega * (track_width / 2.0)
+        v_right = v + omega * (track_width / 2.0)
+
+        msg = DiffWheelCommands()
+        msg.v_left  = float(self.rad_s_calc(v_left))
+        msg.v_right = float(self.rad_s_calc(v_right))
+        self.wheel_pub.publish(msg)
+
+    def publish_twist(self):
+        input_range    = np.array([1000, 1480, 1520, 2000])
+        linear_range   = np.array([-2.235, 0.0, 0.0,  2.235])
+        angular_range  = np.array([ 1.5,   0.0, 0.0, -1.5  ])
+
+        twist = Twist()
+        twist.linear.x  = float(np.interp(self.ry, input_range, linear_range))
+        twist.angular.z = float(np.interp(self.ly, input_range, angular_range))
+        self.publisher_.publish(twist)
+
     def rad_s_calc(self, ms):
         max_ms = 2.235 # 5 mph
         wheel_radius_m = 0.2032 # 16" wheel
