@@ -3,7 +3,7 @@ import numpy as np
 
 class DifferentialDrive:
 
-    def __init__(self, lx, ry, w=0.558, max_speed=2.0):
+    def __init__(self, lx, ry, w=0.558, max_speed=11.0):
         """
         Key Variable Units:
 

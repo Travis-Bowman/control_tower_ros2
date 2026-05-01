@@ -20,9 +20,6 @@ class control_tower_node(Node):
             Int32MultiArray, 'switch_states', 1)
         self.wheel_pub = self.create_publisher(DiffWheelCommands, 'wheel_commands', 10)
 
-        self.declare_parameter('left_trim', 1.0)
-        self.declare_parameter('right_trim', 1.0)
-
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
@@ -89,6 +86,11 @@ class control_tower_node(Node):
             # Differentail Drive
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
             vehicle = diff_drive(self.lx, self.ry)
+            
+            # calculates the rad_s for each wheel
+            vehicle.rad_s_left = self.rad_s_calc(vehicle.v_left)
+            vehicle.rad_s_right = self.rad_s_calc(vehicle.v_right)
+            
             # self.get_logger().info(f"v_left: {vehicle.v_left} v_right {vehicle.v_right}")
             self.publish_wheels(vehicle)
 
@@ -127,14 +129,21 @@ class control_tower_node(Node):
         # self.get_logger().info(f"Published Switch States: {sw_msg.data}")
         
     def publish_wheels(self, vehicle):
-        left_trim = self.get_parameter('left_trim').get_parameter_value().double_value
-        right_trim = self.get_parameter('right_trim').get_parameter_value().double_value
 
         msg = DiffWheelCommands()
-        msg.v_left = float(vehicle.v_left) * left_trim
-        msg.v_right = float(vehicle.v_right) * right_trim
+        msg.v_left = float(vehicle.rad_s_left)
+        msg.v_right = float(vehicle.rad_s_right)
         #self.get_logger().info(f"Left wheel vel: {msg.v_left} Right Wheel vel {msg.v_right}")
         self.wheel_pub.publish(msg)
+    
+    def rad_s_calc(self, ms):
+        max_ms = 2.235 # 5 mph
+        wheel_radius_m = 0.2032 # 16" wheel
+        
+        ms = max(-max_ms,min(ms, max_ms))
+        rad_s = ms / wheel_radius_m
+        return rad_s
+        
 
 
 def main(args=None):
