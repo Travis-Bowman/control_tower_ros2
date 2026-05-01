@@ -37,6 +37,8 @@ class control_tower_node(Node):
         self.sw_b = 0 
         self.sw_c = 0
         self.sw_d = 0
+        
+        #Add
 
         # Create subscriptions
         self.sub_ch1 = self.create_subscription(
