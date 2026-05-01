@@ -19,6 +19,10 @@ class control_tower_node(Node):
         self.switch_publisher_ = self.create_publisher(
             Int32MultiArray, 'switch_states', 1)
         self.wheel_pub = self.create_publisher(DiffWheelCommands, 'wheel_commands', 10)
+
+        self.declare_parameter('left_trim', 1.0)
+        self.declare_parameter('right_trim', 1.0)
+
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
@@ -55,8 +59,8 @@ class control_tower_node(Node):
 
     # Define separate callback functions for each channel
     def callback_1(self, msg): self.rx = msg.data
-    def callback_2(self, msg): self.ly = msg.data
-    def callback_3(self, msg): self.ry = msg.data
+    def callback_2(self, msg): self.ry = msg.data
+    def callback_3(self, msg): self.ly = msg.data
     def callback_4(self, msg): self.lx = msg.data
 
     def callback_5(self, msg): self.sw_a = msg.data
@@ -79,11 +83,11 @@ class control_tower_node(Node):
         #print(self.drive_mode)
         
         if self.drive_mode == 0:
-            self.get_logger().info("Differentail Drive")
+            #self.get_logger().info("Differentail Drive")
             # Differentail Drive
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
-            vehicle = diff_drive(self.lx, self.ly)
-            
+            vehicle = diff_drive(self.lx, self.ry)
+            # self.get_logger().info(f"v_left: {vehicle.v_left} v_right {vehicle.v_right}")
             self.publish_wheels(vehicle)
 
         elif self.drive_mode == 1:
@@ -121,12 +125,13 @@ class control_tower_node(Node):
         # self.get_logger().info(f"Published Switch States: {sw_msg.data}")
         
     def publish_wheels(self, vehicle):
+        left_trim = self.get_parameter('left_trim').get_parameter_value().double_value
+        right_trim = self.get_parameter('right_trim').get_parameter_value().double_value
 
         msg = DiffWheelCommands()
-
-        msg.l_wheel_vel = float(vehicle.v_left)
-        msg.r_wheel_vel = float(vehicle.v_right)
-
+        msg.v_left = float(vehicle.v_left) * left_trim
+        msg.v_right = float(vehicle.v_right) * right_trim
+        #self.get_logger().info(f"Left wheel vel: {msg.v_left} Right Wheel vel {msg.v_right}")
         self.wheel_pub.publish(msg)
 
 

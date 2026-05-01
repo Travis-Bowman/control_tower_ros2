@@ -1,0 +1,4 @@
+control_tower_main:
+  ros__parameters:
+    left_trim: 1.0
+    right_trim: 1.0

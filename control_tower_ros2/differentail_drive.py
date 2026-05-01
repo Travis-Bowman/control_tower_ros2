@@ -3,12 +3,12 @@ import numpy as np
 
 class DifferentialDrive:
 
-    def __init__(self, lx, ly, w=0.558, max_speed=2.0):
+    def __init__(self, lx, ry, w=0.558, max_speed=2.0):
         """
         Key Variable Units:
 
         - `self.lx`             : Raw lateral (turn) input from iBus (unitless, 1000 - 2000)
-        - `self.ly`             : Raw longitudinal (throttle) input from iBus (unitless, 1000 - 2000)
+        - `self.ry`             : Raw longitudinal (throttle) input from iBus (unitless, 1000 - 2000)
         - `self.W`              : Distance between left and right wheels (meters, **m**)
         - `self.v`              : Vehicle's forward/reverse linear speed (meters per second, **m/s**)
         - `self.omega`          : Angular velocity of the vehicle (radians per second, **rad/s**)
@@ -19,7 +19,7 @@ class DifferentialDrive:
         # Differential drive
 
         self.lx = lx
-        self.ly = ly
+        self.ry = ry
         self.w = w
         self.max_speed = max_speed      # max forward/reverse linear speed (m/s)
         self.v = 0                      # linear speed, set in compute_steering
@@ -30,21 +30,22 @@ class DifferentialDrive:
         self.compute_steering()
 
 
+   
     def compute_steering(self):
-        # Map ly → base speed
-        ly_clamped = np.clip(self.ly, 0, 2000)
-        normalized_ly = (ly_clamped - 1000) / 1000.0   # [-1, 1]
-        v_base = normalized_ly * self.max_speed
+        # Map ry → base speed  (you pass this in as the second argument)
+        ry_clamped = np.clip(self.ry, 1000, 2000)          # ry holds the ry value
+        normalized_ry = (ry_clamped - 1000) / 1000.0       # [0, 1]  (or [-1,1] if reversed)
+        v_base = (normalized_ry - 0.5) * 2 * self.max_speed  # centre-stick = 0
 
-        # Map lx → differential
-        lx_clamped = np.clip(self.lx, 0, 2000)
-        normalized_lx = (lx_clamped - 1000) / 1000.0   # [-1, 1]
-        v_diff = normalized_lx * self.max_speed
+        # Map lx → differential (positive lx = turn right = slow right wheel)
+        lx_clamped = np.clip(self.lx, 1000, 2000)
+        normalized_lx = (lx_clamped - 1000) / 1000.0       # [0, 1]
+        v_diff = (normalized_lx - 0.5) * 2 * self.max_speed # centre-stick = 0
 
-        # Wheel velocities
-        self.v_left  = np.clip(v_base - v_diff, -self.max_speed, self.max_speed)
-        self.v_right = np.clip(v_base + v_diff, -self.max_speed, self.max_speed)
-
+        # Turn right: left wheel faster, right wheel slower → subtract diff from right
+        self.v_left  = np.clip(v_base + v_diff, -self.max_speed, self.max_speed)
+        self.v_right = np.clip(v_base - v_diff, -self.max_speed, self.max_speed)
+ 
         # Derived quantities
         self.v = (self.v_right + self.v_left) / 2.0
 
@@ -70,7 +71,7 @@ class DifferentialDrive:
 
 # Example Usage
 if __name__ == "__main__":
-    lx = 1700   # Steering stick — right of centre → turn right
-    ly = 1750   # Throttle stick — above centre     → forward
-    robot = DifferentialDrive(lx, ly, w=0.5, max_speed=2.0)
+    lx = 1600   # Steering stick — right of centre → turn right
+    ry = 1500   # Throttle stick — above centre     → forward
+    robot = DifferentialDrive(lx, ry, w=0.5, max_speed=2.0)
     robot.display_results()
