@@ -34,7 +34,10 @@ class control_tower_node(Node):
         self.declare_parameter('right_trim', 1.0)
         self.declare_parameter('wheel_base', 0.558)
 
-        self.safety_light = LED(SAFETY_LIGHT_PIN) if _GPIO_AVAILABLE else None
+        try:
+            self.safety_light = LED(SAFETY_LIGHT_PIN) if _GPIO_AVAILABLE else None
+        except Exception:
+            self.safety_light = None
         self.drive_mode = 0
         self._light_tick = 0
 
@@ -51,11 +54,11 @@ class control_tower_node(Node):
         # Set up a timer to call update_callback periodically (e.g., every 0.1 seconds)
         self.timer = self.create_timer(0.01, self.update_callback)
 
-        # Stick
-        self.ry = 0  # Vroom vroom (CH3)
-        self.rx = 0  # steering (CH1)
-        self.ly = 0  # Throttle (CH2)
-        self.lx = 0  # we dont know (CH4)
+        # Stick — default to 1500 (RC center) so no-receiver = zero command
+        self.ry = 1500  # Vroom vroom (CH3)
+        self.rx = 1500  # steering (CH1)
+        self.ly = 1500  # Throttle (CH2)
+        self.lx = 1500  # we dont know (CH4)
 
         # Switch
         self.sw_a = 0
@@ -136,6 +139,7 @@ class control_tower_node(Node):
             # L: Length (m), W: Width (m), max_speed: max speed (max speed is not used in the current implementation)
             vehicle = diff_drive(self.lx, self.ry)
             v_left, v_right = self._run_controller(vehicle)
+            self.get_logger().info(f'v_left={v_left} v_right={v_right}', throttle_duration_sec=1.0)
             self.publish_wheels(v_left, v_right)
 
         elif self.drive_mode == 1:
